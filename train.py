@@ -135,15 +135,15 @@ def train_batch(
         tb_logger,
         opts
 ):
-    x, bl_val = baseline.unwrap_batch(batch)
+    x, bl_val = baseline.unwrap_batch(batch)  # Default baseline-> NoBaseline(), return batch, None
     x = move_to(x, opts.device)
-    bl_val = move_to(bl_val, opts.device) if bl_val is not None else None
+    bl_val = move_to(bl_val, opts.device) if bl_val is not None else None # bl_value = None 
 
     # Evaluate model, get costs and log probabilities
-    cost, log_likelihood = model(x)
+    cost, log_likelihood = model(x) # [def forward] in attention_model.py
 
     # Evaluate baseline, get baseline loss if any (only for critic)
-    bl_val, bl_loss = baseline.eval(x, cost) if bl_val is None else (bl_val, 0)
+    bl_val, bl_loss = baseline.eval(x, cost) if bl_val is None else (bl_val, 0) #return 0, 0  # No baseline, no loss
 
     # Calculate loss
     reinforce_loss = ((cost - bl_val) * log_likelihood).mean()

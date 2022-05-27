@@ -5,25 +5,34 @@ import pickle
 from problems.tsp.state_tsp import StateTSP
 from utils.beam_search import beam_search
 
+import time
+import numpy as np
+
+import grid.grid_distances as gd
+n = gd.Nodes()
+c = gd.CostFunc()
 
 class TSP(object):
 
     NAME = 'tsp'
 
     @staticmethod
-    def get_costs(dataset, pi):
+    def get_costs(dataset, pi): # 2.48 seconds for 512 TSP instances
         # Check that tours are valid, i.e. contain 0 to n -1
         assert (
             torch.arange(pi.size(1), out=pi.data.new()).view(1, -1).expand_as(pi) ==
             pi.data.sort(1)[0]
         ).all(), "Invalid tour"
 
-        # Gather dataset in order of tour
         d = dataset.gather(1, pi.unsqueeze(-1).expand_as(dataset))
+        d = np.round(d.numpy(), 4)
 
-        # Length is distance (L2-norm of difference) from each next location from its prev and of last from first
-        return (d[:, 1:] - d[:, :-1]).norm(p=2, dim=2).sum(1) + (d[:, 0] - d[:, -1]).norm(p=2, dim=1), None
+        costs = []
+        for sol in d:
+            costs.append(c.get_cost(sol)) # custom grid cost function
 
+        return torch.FloatTensor(costs), None
+        
     @staticmethod
     def make_dataset(*args, **kwargs):
         return TSPDataset(*args, **kwargs)
@@ -65,8 +74,9 @@ class TSPDataset(Dataset):
                 data = pickle.load(f)
                 self.data = [torch.FloatTensor(row) for row in (data[offset:offset+num_samples])]
         else:
-            # Sample points randomly in [0, 1] square
-            self.data = [torch.FloatTensor(size, 2).uniform_(0, 1) for i in range(num_samples)]
+            # Use grid TSP instance generator
+            data = n.genrate_tsp(num_samples, size)
+            self.data = [torch.FloatTensor(row) for row in (data[offset:offset+num_samples])]
 
         self.size = len(self.data)
 
