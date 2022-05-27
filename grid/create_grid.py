@@ -69,10 +69,10 @@ class CSVUtils():
                                 ):
         from sqlitedict import SqliteDict
         db = SqliteDict(os.path.join(self.grid_dir, save_name))
-        # for c1, c2 in tqdm(combinations):
-        #     db[str(c1+c2)] = {'c1': c1, 'c2': c2, 'distance': haversine(c1, c2, unit=Unit.METERS)}
-        # db.commit()
-        # print("db saved, %d items" % len(db))
+        for c1, c2 in tqdm(combinations):
+            db[str(c1+c2)] = {'c1': c1, 'c2': c2, 'distance': haversine(c1, c2, unit=Unit.METERS)}
+        db.commit()
+        print("db saved, %d items" % len(db))
         db.close()
 
 class Grid(CSVUtils):
